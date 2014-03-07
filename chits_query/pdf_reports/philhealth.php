@@ -143,7 +143,7 @@ function Header()
 
 
 	    $_SESSION["w"] = $w = array(48,48,48,48,48,48,48); //340
-	    $_SESSION["header"] = $header = array('NAME OF MEMBER','STREET,PUROK/SITIO','BARANGAY','DATE OF BIRTH','PHILHEALTH ID','DATE OF EXPIRATION','HOUSEHOLD MEMBERS'."\n".'(* - Potential Dependents)');    	    
+	    $_SESSION["header"] = $header = array('NAME OF MEMBER','STREET,PUROK/SITIO','BARANGAY','DATE OF BIRTH','PHILHEALTH ID / TYPE','DATE OF EXPIRATION','HOUSEHOLD MEMBERS'."\n".'(* - Potential Dependents)');    	    
         endif;
 
         $this->SetWidths($w);
@@ -177,14 +177,19 @@ function show_philhealth_list(){
 		$q_hh = mysql_query("SELECT a.patient_id,b.patient_lastname,b.patient_firstname,round((to_days(now())-to_days(b.patient_dob))/365 , 1) computed_age FROM m_family_members a, m_patient b WHERE a.patient_id!='$arr_px[$i]' AND a.patient_id=b.patient_id AND a.family_id='$family_id'") or die("Cannot query 159 ".mysql_error());
 
 		while(list($pxid,$px_lname,$px_fname,$age) = mysql_fetch_array($q_hh)){
-		        $marked = ($age>=60 || $age <= 21)?'*':'';		        
+		        $marked = ($age>=60 || $age < 21)?'*':'';		        
 			$relatives .= $px_fname.' '.$px_lname.' ('.$age.')'.$marked.', ';
 		}
 
-		$q_philhealth = mysql_query("SELECT philhealth_id,date_format(expiry_date,'%m-%d-%Y') as expiration_date FROM m_patient_philhealth WHERE patient_id='$arr_px[$i]' ORDER by expiry_date ASC") or die("Cannot query 165". mysql_error());
-		list($philhealth_id,$expiration) = mysql_fetch_array($q_philhealth);
+		$q_philhealth = mysql_query("SELECT philhealth_id,member_id, date_format(expiry_date,'%m-%d-%Y') as expiration_date FROM m_patient_philhealth WHERE patient_id='$arr_px[$i]' ORDER by expiry_date ASC") or die("Cannot query 165". mysql_error());
 		
-		$arr_philhealth = array($px_lastname.', '.$px_firstname.'  '.$px_middle,$address,$brgy_name,$px_dob,$philhealth_id,$expiration,$relatives);
+		list($philhealth_id,$member_id,$expiration) = mysql_fetch_array($q_philhealth);
+
+		$q_member = mysql_query("SELECT member_label FROM m_lib_philhealth_member_type WHERE member_id='$member_id'") or die("Cannot query: 188".mysql_error());
+		list($member_label) = mysql_fetch_array($q_member);
+
+		
+		$arr_philhealth = array($px_lastname.', '.$px_firstname.'  '.$px_middle,$address,$brgy_name,$px_dob,$philhealth_id.' / '.$member_label,$expiration,$relatives);
 	
 		$this->Row($arr_philhealth);
 

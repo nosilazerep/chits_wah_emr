@@ -614,10 +614,10 @@ function compute_indicators(){
 				$r_sick1 = array();
 				$r_sick2 = array();
 				$r_sick3 = array();
-				$arr_sakit = array('measles','severe pneumonia','persistent diarrhea','malnutrition','xerophthalmia','night blindness','bitot','corneal xerosis','corneal ulcerations','keratomalacia');
+				$arr_sakit = array('measles','severe pneumonia','diarrhea','malnutrition','xerophthalmia','night blindness','bitot','corneal xerosis','corneal ulcerations','keratomalacia');
 
 				for($x=0;$x<count($arr_sakit);$x++){
-					$str_sakit = "SELECT a.consult_id FROM m_consult a, m_consult_notes_dxclass b,m_lib_notes_dxclass c WHERE a.consult_id=b.consult_id AND b.class_id=c.class_id";
+					$str_sakit = "SELECT a.consult_id,a.patient_id FROM m_consult a, m_consult_notes_dxclass b,m_lib_notes_dxclass c WHERE a.consult_id=b.consult_id AND b.class_id=c.class_id";
 
 					$r_sakit = explode(" ",$arr_sakit[$x]);
 
@@ -633,10 +633,10 @@ function compute_indicators(){
 						}
 					endif;
 	
-				}
+				} 
 				$r_consult = array_unique($r_consult);
 				$str_consult_id = implode(',',$r_consult);
-				
+
 				//print_r($str_consult_id);
 				
 				foreach($sub_arr_crit as $arr_key=>$arr_label){
@@ -653,7 +653,7 @@ function compute_indicators(){
 					if($sick_key=='6*11'):
 						$q_sick = mysql_query("SELECT a.patient_id, date_format(b.consult_date,'%Y-%m-%d'),b.consult_id,round((TO_DAYS(date_format(b.consult_date,'%Y-%m-%d'))-TO_DAYS(a.patient_dob))/30,2) FROM m_patient a,m_consult b WHERE a.patient_id=b.patient_id AND b.consult_id='$r_consult[$m]' AND b.consult_date BETWEEN '$_SESSION[sdate2]' AND '$_SESSION[edate2]' AND a.patient_gender='$sex_label' AND round((TO_DAYS(date_format(b.consult_date,'%Y-%m-%d'))-TO_DAYS(a.patient_dob))/30,2) BETWEEN 6 AND 11.9999") or die("Cannot query: 440");
 
-					if(mysql_num_rows($q_sick)!=0):
+					if(mysql_num_rows($q_sick)!=0): 
 						array_push($r_sick1,$r_consult[$m]);
 						while(list($pxid,$consult_date,$consult_id,$range)=mysql_fetch_array($q_sick)){							
 							if($this->get_px_brgy($pxid,$brgy_array)):
@@ -728,7 +728,7 @@ function compute_indicators(){
 							$sick_stat_px = array(1=>array(),2=>array(),3=>array(),4=>array(),5=>array(),6=>array(),7=>array(),8=>array(),9=>array(),10=>array(),11=>array(),12=>array());				
 							
 							if($vita_key=='6*11'):
-								foreach($r_consult[0] as $consult_key=>$consult_id){
+								foreach($r_consult[0] as $consult_key=>$consult_id){ 
 										$q_vita = mysql_query("SELECT a.vita_date,b.patient_id FROM m_consult_notes a,m_patient b WHERE a.patient_id=b.patient_id AND a.consult_id='$consult_id' AND b.patient_gender='$sex_label' AND a.vita_date BETWEEN '$_SESSION[sdate2]' AND '$_SESSION[edate2]'") or die("Cannot query: 732");
 
 									if(mysql_num_rows($q_vita)!=0): 
@@ -1125,15 +1125,17 @@ function compute_indicators(){
 
 					$month_stat = array(1=>0,2=>0,3=>0,4=>0,5=>0,6=>0,7=>0,8=>0,9=>0,10=>0,11=>0,12=>0);
 
-					$q_lbw = mysql_query("SELECT a.patient_id,b.ccdev_id,b.date_registered,b.lbw_date_started,b.lbw_date_completed FROM m_patient a,m_patient_ccdev b WHERE a.patient_id=b.patient_id AND round((TO_DAYS(b.date_registered) - TO_DAYS(a.patient_dob))/30,2) BETWEEN 2 AND 6.999 AND b.date_registered BETWEEN '$_SESSION[sdate2]' AND '$_SESSION[edate2]' AND round((TO_DAYS(b.lbw_date_completed) - TO_DAYS(a.patient_dob))/30,2) BETWEEN 0 AND 6.999 AND a.patient_gender='$arr_gender[$sex]'") or die("Cannot query: 715");
+					//$q_lbw = mysql_query("SELECT a.patient_id,b.ccdev_id,b.date_registered,b.lbw_date_started,b.lbw_date_completed FROM m_patient a,m_patient_ccdev b WHERE a.patient_id=b.patient_id AND round((TO_DAYS(b.date_registered) - TO_DAYS(a.patient_dob))/30,2) BETWEEN 2 AND 6.999 AND b.date_registered BETWEEN '$_SESSION[sdate2]' AND '$_SESSION[edate2]' AND round((TO_DAYS(b.lbw_date_completed) - TO_DAYS(a.patient_dob))/30,2) BETWEEN 0 AND 6.999 AND a.patient_gender='$arr_gender[$sex]'") or die("Cannot query: 715");
 
-					if(mysql_num_rows($q_lbw)!=0):
+					$q_lbw = mysql_query("SELECT a.patient_id,b.ccdev_id,b.date_registered,b.lbw_date_started,b.lbw_date_completed FROM m_patient a,m_patient_ccdev b WHERE a.patient_id=b.patient_id AND round((TO_DAYS(b.date_registered) - TO_DAYS(a.patient_dob))/30,2) BETWEEN 2 AND 6.999 AND b.lbw_date_started BETWEEN '$_SESSION[sdate2]' AND '$_SESSION[edate2]' AND a.patient_gender='$arr_gender[$sex]'") or die("Cannot query: 715");
 
-						while(list($pxid,$ccdevid,$ccdev_date,$start_date,$completed_date)=mysql_fetch_array($q_lbw)){
+					if(mysql_num_rows($q_lbw)!=0): 
+
+						while(list($pxid,$ccdevid,$ccdev_date,$start_date,$completed_date)=mysql_fetch_array($q_lbw)){ 
 							if($this->get_lbw($ccdevid)=='lbw'):
-								if($this->get_px_brgy($pxid,$brgy_array)):
-									$month_stat[$this->get_max_month($completed_date)] += 1;
-									array_push($month_stat_px[$this->get_max_month($completed_date)],array($pxid,'Infants 2-6 mos with LBW Given Iron','epi',$completed_date));
+								if($this->get_px_brgy($pxid,$brgy_array)): 
+									$month_stat[$this->get_max_month($start_date)] += 1;
+									array_push($month_stat_px[$this->get_max_month($start_date)],array($pxid,'Infants 2-6 mos with LBW Given Iron','epi',$start_date));
 								endif;
 							endif;
 						}
@@ -1274,17 +1276,17 @@ function compute_indicators(){
 
 					$q_nbs = mysql_query("SELECT DISTINCT a.patient_id, MIN(b.ccdev_service_date),b.service_id FROM m_patient a, m_consult_ccdev_services b WHERE a.patient_id=b.patient_id AND b.service_id='NBSDONE' AND a.patient_gender='$arr_gender[$sex]' AND round((TO_DAYS(b.ccdev_service_date)-TO_DAYS(a.patient_dob))/30,2) BETWEEN 0 AND 11.999 AND b.ccdev_service_date BETWEEN '$_SESSION[sdate2]' AND '$_SESSION[edate2]' GROUP by a.patient_id") or die("Cannot query 1206: ".mysql_error());
 
-					if(mysql_num_rows($q_nbs)!=0):
-						while(list($patient_id,$service_date)=mysql_fetch_array($q_nbs)){
-							if($this->get_px_brgy($patient_id,$brgy_array)):
-								$nbs_stat[$this->get_max_month($service_date)] += 1;
+					if(mysql_num_rows($q_nbs)!=0): 
+						while(list($patient_id,$service_date)=mysql_fetch_array($q_nbs)){ 
+							if($this->get_px_brgy($patient_id,$brgy_array)): 
+								$month_stat[$this->get_max_month($service_date)] += 1;
 								array_push($nbs_stat_px[$this->get_max_month($service_date)],array($patient_id,'Infants for Newborn Screening (Done)','epi',$service_date));
 							endif;
 						}
 					endif;
-					array_push($_SESSION["arr_px_labels"]["epi"],$nbs_stat_px);
-					array_push($arr_gender_stat,$month_stat);
-				}
+					array_push($_SESSION["arr_px_labels"]["epi"],$nbs_stat_px); 
+					array_push($arr_gender_stat,$month_stat); 
+				} 
 
 				break;
 			
